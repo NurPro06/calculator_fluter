@@ -1,4 +1,7 @@
+import 'package:calculator_fluter/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'culculator_button.dart';
 
 class CalculatorScreen extends StatefulWidget {
   const CalculatorScreen({super.key});
@@ -8,41 +11,91 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
-  String _display = '0'; // Отображение результата
-  double _num1 = 0; // Первое число
-  double _num2 = 0; // Второе число
-  String _operation = ''; // Текущая операция
+  String screenValue = '0';
+  double firstOperand = 0;
+  String operation = '';
+  bool isNewInput = true;
 
-  void _onButtonPressed(String value) {
+  void _inputNumber(String number) {
     setState(() {
-      if (value == 'C') {
-        _display = '0';
-        _num1 = 0;
-        _num2 = 0;
-        _operation = '';
-      } else if ('X/+-'.contains(value)) {
-        _num1 = double.parse(_display);
-        _operation = value;
-        _display = '0';
-      } else if (value == '=') {
-        _num2 = double.parse(_display);
-        switch (_operation) {
-          case 'X':
-            _display = (_num1 * _num2).toString();
-            break;
-          case '/':
-            _display = _num2 != 0 ? (_num1 / _num2).toString() : 'Error';
-            break;
-          case '+':
-            _display = (_num1 + _num2).toString();
-            break;
-          case '-':
-            _display = (_num1 - _num2).toString();
-            break;
-        }
-        _operation = '';
+      if (isNewInput) {
+        screenValue = number;
+        isNewInput = false;
       } else {
-        _display = _display == '0' ? value : _display + value;
+        screenValue = screenValue == '0' ? number : screenValue + number;
+      }
+    });
+  }
+
+  void _inputOperation(String newOperation) {
+    setState(() {
+      firstOperand = double.parse(screenValue);
+      operation = newOperation;
+      isNewInput = true;
+    });
+  }
+
+  void _calculateResult() {
+    setState(() {
+      double secondOperand = double.parse(screenValue);
+      switch (operation) {
+        case '+':
+          screenValue = (firstOperand + secondOperand).toString();
+          break;
+        case '-':
+          screenValue = (firstOperand - secondOperand).toString();
+          break;
+        case 'X':
+          screenValue = (firstOperand * secondOperand).toString();
+          break;
+        case '/':
+          screenValue = secondOperand != 0
+              ? (firstOperand / secondOperand).toString()
+              : 'Error';
+          break;
+        default:
+          return;
+      }
+      if (screenValue.endsWith('.0')) {
+        screenValue = screenValue.substring(0, screenValue.length - 2);
+      }
+      isNewInput = true;
+    });
+  }
+
+  void _clear() {
+    setState(() {
+      screenValue = '0';
+      firstOperand = 0;
+      operation = '';
+      isNewInput = true;
+    });
+  }
+
+  void _toggleSign() {
+    setState(() {
+      if (screenValue.startsWith('-')) {
+        screenValue = screenValue.substring(1);
+      } else if (screenValue != '0') {
+        screenValue = '-$screenValue';
+      }
+    });
+  }
+
+  void _percent() {
+    setState(() {
+      double value = double.parse(screenValue) / 100;
+      screenValue = value.toString();
+      if (screenValue.endsWith('.0')) {
+        screenValue = screenValue.substring(0, screenValue.length - 2);
+      }
+    });
+  }
+
+  void _inputDot() {
+    setState(() {
+      if (!screenValue.contains('.')) {
+        screenValue += '.';
       }
     });
   }
@@ -50,89 +103,163 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2D2F39), // Темный фон
-      appBar: AppBar(
-        title: const Text('Calculator'),
-        backgroundColor: const Color(0xFF2D2F39),
-        elevation: 0,
-      ),
+      backgroundColor: AppColors.backgroundColor,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 37),
         child: Column(
           children: [
-            // Экран результата
-            Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                _display,
-                style: const TextStyle(fontSize: 48, color: Colors.white),
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned(
+                    bottom: 1,
+                    right: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 35),
+                      child: Text(
+                        screenValue,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 56,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  )
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            // Кнопки
             Expanded(
+              flex: 2,
               child: Column(
                 children: [
-                  buildRow(['7', '8', '9', 'X']),
-                  buildRow(['4', '5', '6', '/']),
-                  buildRow(['1', '2', '3', '+']),
-                  buildRow(['0', 'C', '=', '-']),
+                  Row(
+                    children: [
+                      CalculatorButton(
+                        text: 'C',
+                        onTab: _clear,
+                        color: AppColors.grey,
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '+/-',
+                        onTab: _toggleSign,
+                        color: AppColors.grey,
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '%',
+                        onTab: _percent,
+                        color: AppColors.grey,
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '/',
+                        onTab: () => _inputOperation('/'),
+                        isActionColor: true,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      CalculatorButton(
+                        text: '7',
+                        onTab: () => _inputNumber('7'),
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '8',
+                        onTab: () => _inputNumber('8'),
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '9',
+                        onTab: () => _inputNumber('9'),
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: 'X',
+                        onTab: () => _inputOperation('X'),
+                        isActionColor: true,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      CalculatorButton(
+                        text: '4',
+                        onTab: () => _inputNumber('4'),
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '5',
+                        onTab: () => _inputNumber('5'),
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '6',
+                        onTab: () => _inputNumber('6'),
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '-',
+                        onTab: () => _inputOperation('-'),
+                        isActionColor: true,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      CalculatorButton(
+                        text: '1',
+                        onTab: () => _inputNumber('1'),
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '2',
+                        onTab: () => _inputNumber('2'),
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '3',
+                        onTab: () => _inputNumber('3'),
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '+',
+                        onTab: () => _inputOperation('+'),
+                        isActionColor: true,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      CalculatorButton(
+                        text: '0',
+                        flex: 2,
+                        onTab: () => _inputNumber('0'),
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '.',
+                        onTab: _inputDot,
+                      ),
+                      const SizedBox(width: 10),
+                      CalculatorButton(
+                        text: '=',
+                        onTab: _calculateResult,
+                        isActionColor: true,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildRow(List<String> buttons) {
-    return Expanded(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: buttons.map((text) => buildButton(text)).toList(),
-      ),
-    );
-  }
-
-  Widget buildButton(String text) {
-    bool isOperation = 'X/+-='.contains(text);
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: GestureDetector(
-          onTap: () => _onButtonPressed(text),
-          child: Container(
-            height: 77,
-            decoration: BoxDecoration(
-              color: const Color(0xFF3B3E4A), // Цвет кнопок
-              shape: BoxShape.circle,
-              boxShadow: [
-                // Неоморфизм: верхняя тень
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
-                  offset: const Offset(-4, -4),
-                  blurRadius: 8,
-                ),
-                // Неоморфизм: нижняя тень
-                BoxShadow(
-                  color: Colors.white.withOpacity(0.1),
-                  offset: const Offset(4, 4),
-                  blurRadius: 8,
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                text,
-                style: TextStyle(
-                  fontSize: 24,
-                  color: isOperation ? const Color(0xFFFF9500) : Colors.white,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );
