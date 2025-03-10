@@ -1,7 +1,7 @@
 import 'package:calculator_fluter/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'culculator_button.dart';
+import 'calculator_button.dart';
 
 class CalculatorScreen extends StatefulWidget {
   const CalculatorScreen({super.key});
